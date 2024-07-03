@@ -1,0 +1,249 @@
+// import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore package
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
+
+// void main() {
+//   runApp(MyApp());
+// }
+
+// class MyApp extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       home: WorkoutRecorder(),
+//     );
+//   }
+// }
+
+// class WorkoutRecorder extends StatefulWidget {
+//   @override
+//   _WorkoutRecorderState createState() => _WorkoutRecorderState();
+// }
+
+// class _WorkoutRecorderState extends State<WorkoutRecorder> {
+//   final List<Map<String, String>> rowData = [];
+
+//   final currentUser = FirebaseAuth.instance.currentUser; // Initialize Firestore
+//   @override
+//   void initState() {
+//     super.initState();
+//     fetchUserData(); // Fetch data when the widget is first created
+//   }
+
+//   @override
+//   void didChangeDependencies() {
+//     super.didChangeDependencies();
+//     fetchUserData(); // Fetch data when returning to the page
+//   }
+
+//   void fetchUserData() {
+//     final user = FirebaseAuth.instance.currentUser;
+//     if (user != null) {
+//       final userId = currentUser?.email;
+
+//       FirebaseFirestore.instance
+//           .collection("ExerciseRow")
+//           .where('userEmail', isEqualTo: userId)
+//           .get()
+//           .then((querySnapshot) {
+//         setState(() {
+//           rowData.clear();
+//           rowData.addAll(querySnapshot.docs.map((doc) => {
+//                 'id': doc.id, // Store document ID
+//                 'data': doc['data'] // Store document data
+//               }));
+//         });
+//       }).catchError((error) {
+//         print("Error retrieving data from Firestore: $error");
+//       });
+//     }
+//   }
+
+//   void addRow() {
+//     final user = FirebaseAuth.instance.currentUser;
+//     if (user != null) {
+//       final userId = user.email;
+//       final newData = "New Row: Information ${rowData.length + 1}";
+
+//       FirebaseFirestore.instance.collection("ExerciseRow").add({
+//         'data': newData,
+//         'userEmail': userId,
+//         'timestamp': FieldValue.serverTimestamp(),
+//       }).then((DocumentReference docRef) {
+//         setState(() {
+//           rowData.add({'id': docRef.id, 'data': newData});
+//         });
+//       }).catchError((error) {
+//         print("Error adding data to Firestore: $error");
+//       });
+//     }
+//   }
+
+//   void deleteRow(int index) {
+//     final String? docId = rowData[index]['id'];
+
+//     if (docId != null) {
+//       FirebaseFirestore.instance
+//           .collection("ExerciseRow")
+//           .doc(docId)
+//           .delete()
+//           .then((_) {
+//         setState(() {
+//           rowData.removeAt(index);
+//         });
+//       }).catchError((error) {
+//         print("Error deleting data from Firestore: $error");
+//       });
+//     } else {
+//       print("Error: Document ID was null.");
+//     }
+//   }
+
+//   void editRowTitle(int index, String newTitle) {
+//     final docId = rowData[index]['id'];
+//     print(docId);
+//     if (docId != null) {
+//       FirebaseFirestore.instance
+//           .collection("ExerciseRow")
+//           .doc(docId)
+//           .update({'data': newTitle}).then((_) {
+//         setState(() {
+//           rowData[index]['data'] = newTitle;
+//         });
+//       }).catchError((error) {
+//         print("Error updating data in Firestore: $error");
+//       });
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.white,
+//       body: Column(
+//         children: [
+//           SizedBox(height: 20.0),
+//           Expanded(
+//             child: MyRowList(
+//               data: rowData,
+//               onDelete: deleteRow,
+//               onEdit: editRowTitle,
+//             ),
+//           ),
+//         ],
+//       ),
+//       floatingActionButton: FloatingActionButton(
+//         onPressed: addRow,
+//         child: const Icon(Icons.add),
+//       ),
+//     );
+//   }
+// }
+
+// class MyRowList extends StatelessWidget {
+//   final List<Map<String, String>> data;
+//   final Function(int) onDelete;
+//   final Function(int, String) onEdit;
+
+//   MyRowList({
+//     required this.data,
+//     required this.onDelete,
+//     required this.onEdit,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return ListView.builder(
+//       itemCount: data.length,
+//       itemBuilder: (context, index) {
+//         return Padding(
+//           padding: const EdgeInsets.all(8.0),
+//           child: GestureDetector(
+//             child: MyRowItem(
+//               text: data[index]['data'] ?? '',
+//               onDelete: () => onDelete(index),
+//               onEdit: (newTitle) => onEdit(index, newTitle),
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
+
+// class MyRowItem extends StatefulWidget {
+//   final String text;
+//   final Function(String) onEdit;
+//   final VoidCallback onDelete;
+
+//   MyRowItem({
+//     required this.text,
+//     required this.onEdit,
+//     required this.onDelete,
+//   });
+
+//   @override
+//   _MyRowItemState createState() => _MyRowItemState();
+// }
+
+// class _MyRowItemState extends State<MyRowItem> {
+//   TextEditingController _titleController = TextEditingController();
+//   bool _isExpanded = false;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _titleController = TextEditingController(text: widget.text);
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return ExpansionPanelList(
+//       expansionCallback: (int index, bool isExpanded) {
+//         setState(() {
+//           _isExpanded = !_isExpanded; // Toggle the expanded state
+//         });
+//       },
+//       children: [
+//         ExpansionPanel(
+//           headerBuilder: (BuildContext context, bool isExpanded) {
+//             return ListTile(
+//               title: Row(
+//                 children: [
+//                   Icon(Icons.info),
+//                   SizedBox(width: 16.0),
+//                   Expanded(
+//                     child: TextField(
+//                       controller: _titleController,
+//                       style: TextStyle(fontSize: 18.0),
+//                       onSubmitted: (newTitle) {
+//                         // When the user submits their edit, handle the change
+//                         widget.onEdit(newTitle);
+//                       },
+//                       decoration: const InputDecoration(
+//                         border: InputBorder.none, // Remove the underline border
+//                         hintText: "Enter text", // Placeholder if text is empty
+//                       ),
+//                     ),
+//                   ),
+//                   IconButton(
+//                     icon: Icon(Icons.delete),
+//                     onPressed: widget.onDelete,
+//                   ),
+//                 ],
+//               ),
+//             );
+//           },
+//           body: SizedBox.shrink(),
+//           isExpanded: _isExpanded,
+//         ),
+//       ],
+//     );
+//   }
+
+//   @override
+//   void dispose() {
+//     _titleController.dispose();
+//     super.dispose();
+//   }
+// }
